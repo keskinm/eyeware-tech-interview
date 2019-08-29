@@ -11,7 +11,7 @@ import argparse
 class TopLeftCornerModelEvaluator:
     def __init__(self, train_epoch, lr, train_batch_size, test_model,
                  model_type, seed, save_dir, resume_model, optimizer,
-                 dump_metrics_frequency, num_threads, len_simulated_dataset):
+                 dump_metrics_frequency, num_threads, simulated_dataset_size):
         self.train_epoch = train_epoch
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
@@ -29,7 +29,7 @@ class TopLeftCornerModelEvaluator:
         os.makedirs(self.save_model_dir_path, exist_ok=True)
         os.makedirs(self.metrics_dir_path, exist_ok=True)
 
-        self.len_simulated_dataset = len_simulated_dataset
+        self.simulated_dataset_size = simulated_dataset_size
         self.num_threads = num_threads
         self.train_set_loader, self.val_set_loader, self.test_set_loader = self.prepare_data(
         )
@@ -38,9 +38,9 @@ class TopLeftCornerModelEvaluator:
         self.dump_metrics_frequency = dump_metrics_frequency
 
     def prepare_data(self):
-        train_dataset_size = round(0.7 * self.len_simulated_dataset)
-        val_dataset_size = round(0.15 * self.len_simulated_dataset)
-        test_dataset_size = round(0.15 * self.len_simulated_dataset)
+        train_dataset_size = round(0.7 * self.simulated_dataset_size)
+        val_dataset_size = round(0.15 * self.simulated_dataset_size)
+        test_dataset_size = round(0.15 * self.simulated_dataset_size)
 
         if self.train_batch_size >= train_dataset_size:
             self.train_batch_size = train_dataset_size // 3
@@ -171,7 +171,7 @@ def main():
         help='Number of CPU to use for processing mini batches')
 
     parser.add_argument(
-        '--len-simulated-dataset',
+        '--simulated-dataset-size',
         default='80',
         type=int,
         help='Number of samples (train+val+test)')
