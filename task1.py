@@ -3,10 +3,12 @@ import random
 import numpy as np
 from numpy import linalg as LA
 import shutil
-import re
+
 
 def create_files():
     work_dir = './data/task1'
+    shutil.rmtree(work_dir, ignore_errors=True)
+    os.makedirs(work_dir, exist_ok=True)
     files_n = 20
     vectors_file_path = os.path.join(work_dir, 'vectors.txt')
     with open(vectors_file_path, "w") as opened_vectors_file:
@@ -22,17 +24,11 @@ def create_files():
             opened_data_file.write('')
 
 
-create_files()
-
 def parse_vectors():
     work_dir = './data/task1'
     vectors_file_path = os.path.join(work_dir, 'vectors.txt')
 
     with open(vectors_file_path, "r") as opened_vectors_file:
-        # content = opened_vectors_file.readlines()
-    # content = [x.strip() for x in content]
-    # print(content)
-
         lines = []
         for line in opened_vectors_file:
             line = line.strip().split()[1:]
@@ -43,12 +39,9 @@ def parse_vectors():
 
     return data, main_vector
 
-data, main_vector = parse_vectors()
 
 def sort_files(data, main_vector):
     files_n = 20
-    index = np.expand_dims(np.arange(files_n), axis=1)
-    indexed_data = np.concatenate([index, data], axis=1)
     dist = LA.norm(data-main_vector, axis=1)
 
     sorted_eucl_dist = np.argsort(dist)
@@ -61,45 +54,38 @@ def sort_files(data, main_vector):
     return folder_a_idx, folder_b_idx, folder_c_idx
 
 
-folder_a_idx, folder_b_idx, folder_c_idx = sort_files(data, main_vector)
-
-
 def move_files(folder_a_idx, folder_b_idx, folder_c_idx):
     work_dir = './data/task1'
 
-
-    folder_a_dir_path = './data/task1/folder_A'
-    folder_b_dir_path = './data/task1/folder_B'
-    folder_c_dir_path = './data/task1/folder_C'
-
-    shutil.rmtree(folder_a_dir_path)
-    shutil.rmtree(folder_b_dir_path)
-    shutil.rmtree(folder_c_dir_path)
-
+    folder_a_dir_path, folder_b_dir_path, folder_c_dir_path = './data/task1/folder_A', './data/task1/folder_B', './data/task1/folder_C'
 
     file_names = os.listdir(work_dir)
 
-    os.makedirs(folder_a_dir_path, exist_ok=True)
-    os.makedirs(folder_b_dir_path, exist_ok=True)
-    os.makedirs(folder_c_dir_path, exist_ok=True)
+    for folder in [folder_a_dir_path, folder_b_dir_path, folder_c_dir_path]:
+        os.makedirs(folder, exist_ok=True)
 
     for file_name in file_names:
-        if not 'vectors' in file_name:
+        if not ('vectors' in file_name):
             file_idx_with_extension = file_name.split('_')[1]
-            file_idx = os.path.splitext(file_idx_with_extension)[0]
+            file_idx = int(os.path.splitext(file_idx_with_extension)[0])
             file_path = os.path.join(work_dir, file_name)
 
-            print(((file_idx)))
-
-            if int(file_idx) in folder_a_idx:
+            if file_idx in folder_a_idx:
                 shutil.move(file_path, os.path.join(folder_a_dir_path, file_name))
 
-            elif int(file_idx) in folder_b_idx:
+            elif file_idx in folder_b_idx:
                 shutil.move(file_path, os.path.join(folder_b_dir_path, file_name))
 
-            elif int(file_idx) in folder_c_idx:
+            elif file_idx in folder_c_idx:
                 shutil.move(file_path, os.path.join(folder_c_dir_path, file_name))
 
 
+def main():
+    create_files()
+    data, main_vector = parse_vectors()
+    folder_a_idx, folder_b_idx, folder_c_idx = sort_files(data, main_vector)
+    move_files(folder_a_idx, folder_b_idx, folder_c_idx)
 
-move_files(folder_a_idx, folder_b_idx, folder_c_idx)
+
+if __name__ == "__main__":
+    main()
