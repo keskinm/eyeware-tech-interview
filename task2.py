@@ -3,6 +3,7 @@ import pandas as pd
 import math
 import os
 from matplotlib import pyplot as plt
+import argparse
 
 
 def normalize_vector(vector):
@@ -15,14 +16,13 @@ def compute_vectors_angular_deviation(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 
-def load_and_process_data():
-    work_dir = './data/task2'
-    predictions_file_names = [file_name for file_name in os.listdir(work_dir) if (not ('por_gt' in file_name) and not('lost_frames' in file_name))]
+def load_and_process_data(files_input_dir):
+    predictions_file_names = [file_name for file_name in os.listdir(files_input_dir) if (not ('por_gt' in file_name) and not('lost_frames' in file_name))]
 
     predictions_list = []
 
     for idx, prediction_file_name in enumerate(predictions_file_names):
-        prediction_file_path = os.path.join(work_dir, prediction_file_name)
+        prediction_file_path = os.path.join(files_input_dir, prediction_file_name)
         prediction = pd.read_csv(prediction_file_path, header=None, sep=" ")
         predictions_list.append(prediction)
         if prediction_file_name != 'gaze_vectors.txt':
@@ -30,7 +30,7 @@ def load_and_process_data():
         prediction = np.array(prediction)
         predictions_list[idx] = prediction
 
-    gt_file_path = os.path.join(work_dir, 'por_gt.txt')
+    gt_file_path = os.path.join(files_input_dir, 'por_gt.txt')
     gt = pd.read_csv(gt_file_path, header=None, sep=" ")
     gt = gt.iloc[:, 1:]
     gt = np.array(gt)
@@ -64,18 +64,31 @@ def compute_models_errors_vs_ratio(models_angular_deviations):
     return np.array(models_error_vs_ratio)
 
 
-def plot_error_vs_ratio(models_errors_vs_ratio):
+def plot_error_vs_ratio(models_errors_vs_ratio, plot_output_dir):
     for models_errors_vs_ratio in models_errors_vs_ratio:
         plt.plot(range(45), models_errors_vs_ratio)
-    plt.savefig('error_vs_ratio.png')
+    plot_file_path = os.path.join(plot_output_dir, 'error_vs_ratio.png')
+    plt.savefig(plot_file_path)
 
 
-def main():
-    predictions_list, gt = load_and_process_data()
+def main(files_input_dir, plot_output_dir):
+    os.makedirs(plot_output_dir, exist_ok=True)
+    predictions_list, gt = load_and_process_data(files_input_dir)
     models_angular_deviations = compute_models_angular_deviations(predictions_list, gt)
     models_errors_vs_ratio = compute_models_errors_vs_ratio(models_angular_deviations)
-    plot_error_vs_ratio(models_errors_vs_ratio)
+    plot_error_vs_ratio(models_errors_vs_ratio, plot_output_dir)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog='task2')
+    parser.add_argument('--files-input-dir',
+                        default='./data/task2',
+                        help='path or dir where text files are stored')
+
+    parser.add_argument('--plot-output-dir',
+                        default='./data',
+                        help='path or dir where text files are stored')
+
+    args = parser.parse_args()
+
+    main(args.files_input_dir, args.plot_output_dir)
