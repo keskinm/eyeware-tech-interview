@@ -3,50 +3,15 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random
 import os
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from models.seven_conv import seven_conv
 from models.two_conv import two_conv
 from numpy import linalg as LA
-
-class SimulatedDataset(Dataset):
-    def __init__(self):
-        self.len_data = 2
-        self.work_dir = './data/task3/images'
-        self.data = self.create_images_and_labels(len_data=50)
-
-    def __getitem__(self, idx):
-        # if torch.is_tensor(idx):
-        #     idx = idx.tolist()
-
-        frame, label = self.data[idx]
-        sample = (frame, label)
-
-        return sample
-
-    def __len__(self):
-        return len(self.data)
-
-    def create_image_and_label(self):
-        frame = np.zeros([28, 28])
-        tl_coord = [random.randrange(-10, 10) for j in range(2)]
-        tl_x, tl_y = tl_coord[0], tl_coord[1]
-        frame[tl_x:, :] = 1
-        frame[:, tl_y:] = 1
-        tl_coord = np.array(tl_coord)
-        frame = np.array(frame)
-        frame = np.expand_dims(frame, axis=0)
-
-        return [frame, tl_coord]
-
-    def create_images_and_labels(self, len_data):
-        data = []
-        for idx in range(len_data):
-            instance = self.create_image_and_label()
-            data.append(instance)
-        return data
+from dataset.simulated_dataset import SimulatedDataset
 
 
-set = SimulatedDataset()
+set = SimulatedDataset(work_dir='./data/task3/images', len_data=20)
+
 set_loader = DataLoader(set, batch_size=4,
                         shuffle=True, num_workers=0)
 
