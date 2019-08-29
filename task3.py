@@ -1,8 +1,4 @@
 import torch
-import numpy as np
-from matplotlib import pyplot as plt
-import random
-import os
 from torch.utils.data import DataLoader
 from models.seven_conv import seven_conv
 from models.two_conv import two_conv
@@ -11,7 +7,6 @@ from dataset.simulated_dataset import SimulatedDataset
 
 
 set = SimulatedDataset(work_dir='./data/task3/images', len_data=20)
-
 set_loader = DataLoader(set, batch_size=4,
                         shuffle=True, num_workers=0)
 

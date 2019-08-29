@@ -7,8 +7,8 @@ class SimulatedDataset(Dataset):
     def __init__(self, work_dir, len_data=50, dim=28):
         self.len_data = len_data
         self.work_dir = work_dir
-        self.data = self.create_images_and_labels(len_data=50)
         self.dim = dim
+        self.data = self.create_images_and_labels(len_data=50)
 
     def __getitem__(self, idx):
         frame, label = self.data[idx]
