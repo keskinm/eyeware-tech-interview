@@ -3,10 +3,10 @@ import random
 import numpy as np
 from numpy import linalg as LA
 import shutil
+import argparse
 
 
-def create_files():
-    work_dir = './data/task1'
+def create_files(work_dir):
     shutil.rmtree(work_dir, ignore_errors=True)
     os.makedirs(work_dir, exist_ok=True)
     files_n = 20
@@ -24,8 +24,7 @@ def create_files():
             opened_data_file.write('')
 
 
-def parse_vectors():
-    work_dir = './data/task1'
+def parse_vectors(work_dir):
     vectors_file_path = os.path.join(work_dir, 'vectors.txt')
 
     with open(vectors_file_path, "r") as opened_vectors_file:
@@ -54,9 +53,7 @@ def sort_files(data, main_vector):
     return folder_a_idx, folder_b_idx, folder_c_idx
 
 
-def move_files(folder_a_idx, folder_b_idx, folder_c_idx):
-    work_dir = './data/task1'
-
+def move_files(folder_a_idx, folder_b_idx, folder_c_idx, work_dir):
     folder_a_dir_path, folder_b_dir_path, folder_c_dir_path = './data/task1/folder_A', './data/task1/folder_B', './data/task1/folder_C'
 
     file_names = os.listdir(work_dir)
@@ -80,12 +77,18 @@ def move_files(folder_a_idx, folder_b_idx, folder_c_idx):
                 shutil.move(file_path, os.path.join(folder_c_dir_path, file_name))
 
 
-def main():
-    create_files()
-    data, main_vector = parse_vectors()
+def main(work_dir):
+    create_files(work_dir)
+    data, main_vector = parse_vectors(work_dir)
     folder_a_idx, folder_b_idx, folder_c_idx = sort_files(data, main_vector)
-    move_files(folder_a_idx, folder_b_idx, folder_c_idx)
+    move_files(folder_a_idx, folder_b_idx, folder_c_idx, work_dir)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog='task1')
+    parser.add_argument('--work-dir',
+                        default='./data/task1',
+                        help='path of dir where data is generated and re-organized')
+    args = parser.parse_args()
+
+    main(args.work_dir)
