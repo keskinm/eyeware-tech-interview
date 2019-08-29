@@ -11,7 +11,7 @@ import argparse
 class TopLeftCornerModelEvaluator:
     def __init__(self, train_epoch, lr, train_batch_size, test_model,
                  model_type, seed, save_dir, resume_model, optimizer,
-                 dump_metrics_frequency, num_threads):
+                 dump_metrics_frequency, num_threads, len_simulated_dataset):
         self.train_epoch = train_epoch
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
@@ -29,6 +29,7 @@ class TopLeftCornerModelEvaluator:
         os.makedirs(self.save_model_dir_path, exist_ok=True)
         os.makedirs(self.metrics_dir_path, exist_ok=True)
 
+        self.len_simulated_dataset = len_simulated_dataset
         self.num_threads = num_threads
         self.train_set_loader, self.val_set_loader, self.test_set_loader = self.prepare_data(
         )
@@ -37,9 +38,16 @@ class TopLeftCornerModelEvaluator:
         self.dump_metrics_frequency = dump_metrics_frequency
 
     def prepare_data(self):
-        train_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=40)
-        val_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=10)
-        test_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=10)
+        train_dataset_size = round(0.7 * self.len_simulated_dataset)
+        val_dataset_size = round(0.15 * self.len_simulated_dataset)
+        test_dataset_size = round(0.15 * self.len_simulated_dataset)
+
+        if self.train_batch_size >= train_dataset_size:
+            self.train_batch_size = train_dataset_size // 3
+
+        train_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=train_dataset_size)
+        val_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=val_dataset_size)
+        test_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=test_dataset_size)
 
         train_set_loader = DataLoader(train_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
         val_set_loader = DataLoader(val_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
@@ -134,7 +142,7 @@ def main():
                         help='model path and model name',
                         default=None)
 
-    parser.add_argument('--train-batch-size', default=4, help='')
+    parser.add_argument('--train-batch-size', default=10, help='')
 
     parser.add_argument('--lr', default=0.005, type=float, help='')
 
@@ -161,6 +169,12 @@ def main():
         default='0',
         type=int,
         help='Number of CPU to use for processing mini batches')
+
+    parser.add_argument(
+        '--len-simulated-dataset',
+        default='80',
+        type=int,
+        help='Number of samples (train+val+test)')
 
     args = parser.parse_args()
     args = vars(args)
