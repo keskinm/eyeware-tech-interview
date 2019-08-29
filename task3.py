@@ -1,75 +1,172 @@
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 from models.seven_conv import seven_conv
 from models.two_conv import two_conv
 from numpy import linalg as LA
 from dataset.simulated_dataset import SimulatedDataset
+import os
+import argparse
+
+class TopLeftCornerModelEvaluator:
+    def __init__(self, train_epoch, lr, train_batch_size, test_model,
+                 model_type, seed, save_dir, resume_model, optimizer,
+                 dump_metrics_frequency, num_threads):
+        self.train_epoch = train_epoch
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu')
+        self.lr = lr
+        self.train_batch_size = train_batch_size
+        self.model_type = model_type
+        if seed is not None:
+            torch.manual_seed(seed)
+        self.save_dir = save_dir
+        self.loss_plots_dir = os.path.join(save_dir, 'losses_plots')
+        self.save_model_dir_path = os.path.join(save_dir, 'models')
+        self.metrics_dir_path = os.path.join(self.save_dir, 'metrics')
+
+        os.makedirs(self.loss_plots_dir, exist_ok=True)
+        os.makedirs(self.save_model_dir_path, exist_ok=True)
+        os.makedirs(self.metrics_dir_path, exist_ok=True)
+
+        self.num_threads = num_threads
+        self.train_set_loader, self.val_set_loader, self.test_set_loader = self.prepare_data(
+        )
+
+        self.optimizer = optimizer
+        self.dump_metrics_frequency = dump_metrics_frequency
+
+    def prepare_data(self):
+        train_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=40)
+        val_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=10)
+        test_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=10)
+
+        train_set_loader = DataLoader(train_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
+        val_set_loader = DataLoader(val_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
+        test_set_loader = DataLoader(test_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
+
+        return train_set_loader, val_set_loader, test_set_loader
+
+    def run(self):
+        seven_conv_model = seven_conv()
+        two_conv_model = two_conv()
+        model = two_conv_model
+        model = model.double()
+        criterion, optimizer = self.init_optimizer(model)
+        self.train(model=two_conv_model, criterion=criterion, optimizer=optimizer, device=self.device)
+
+    def train(self, model, criterion, optimizer, device):
+        losses = []
+        epoch_n = self.train_epoch
+        model = model.train()
+        mse = None
+
+        for epoch in range(1, epoch_n + 1):
+            for batch_id, (image, label) in enumerate(self.train_set_loader):
+                label, image = label.to(device), image.to(device)
+                output = model(image)
+                loss = criterion(output, label.double())
+                losses.append(loss.item())
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                if (batch_id != 0) and (batch_id % self.dump_metrics_frequency == 0):
+                    mse = self.compute_mse(model, self.val_set_loader, device=self.device)
+                    self.dump_metrics_and_save_model(mse)
+
+            print("epoch:", epoch)
+            self.compute_mse(model=model, data_set=self.val_set_loader, device=self.device)
+            self.dump_metrics_and_save_model(mse)
+
+    def dump_metrics_and_save_model(self, mse):
+        pass
+
+    def init_optimizer(self, model):
+        if self.optimizer == 'adam':
+            optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad,
+                                                model.parameters()),
+                                         lr=self.lr)
+
+        else:
+            optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,
+                                               model.parameters()),
+                                        lr=self.lr,
+                                        momentum=0.9)
+
+        criterion = nn.MSELoss()
+        return criterion, optimizer
+
+    def compute_mse(self, model, data_set, device):
+        model = model.eval()
+        with torch.no_grad():
+            mse = 0
+            total = 0
+            for batch_id, (image, label) in enumerate(data_set):
+                image = image.to(device)
+                label = label.to(device)
+                outputs = model(image).to(device)
+                se = LA.norm(outputs-label.double())
+                # print(se)
+                total += label.shape[0]/4*2
+                mse += se
+        print(mse)
+        return mse
 
 
-set = SimulatedDataset(work_dir='./data/task3/images', len_data=20)
-set_loader = DataLoader(set, batch_size=4,
-                        shuffle=True, num_workers=0)
+def main():
+    parser = argparse.ArgumentParser(prog='Simulated data wise left corner detection model evaluator')
+
+    parser.add_argument('--model-type',
+                        choices=['two_conv', 'seven_conv'],
+                        default='two_conv',
+                        help='')
+
+    parser.add_argument('-t',
+                        '--test-model',
+                        nargs='+',
+                        help='model path and model name',
+                        default=None)
+
+    parser.add_argument('-r',
+                        '--resume-model',
+                        nargs='+',
+                        help='model path and model name',
+                        default=None)
+
+    parser.add_argument('--train-batch-size', default=4, help='')
+
+    parser.add_argument('--lr', default=0.005, type=float, help='')
+
+    parser.add_argument('--train-epoch', default=20, type=int, help='')
+
+    parser.add_argument('--seed', default=42, help='')
+
+    parser.add_argument('--save-dir', default='./data', help='')
+
+    parser.add_argument('--optimizer',
+                        choices=['adam', 'sgd'],
+                        default='adam',
+                        help='')
+
+    parser.add_argument('--dump-metrics-frequency',
+                        metavar='Batch_n',
+                        default='200',
+                        type=int,
+                        help='Dump metrics every Batch_n batches')
 
 
-seven_conv_model = seven_conv()
-two_conv_model = two_conv()
+    parser.add_argument(
+        '--num-threads',
+        default='0',
+        type=int,
+        help='Number of CPU to use for processing mini batches')
+
+    args = parser.parse_args()
+    args = vars(args)
+    evaluator = TopLeftCornerModelEvaluator(**args)
+    evaluator.run()
 
 
-model = two_conv_model
-model = model.double()
-
-
-# optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad,
-#                                    model.parameters()),
-#                             lr=0.005,
-#                             momentum=0.9)
-
-optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad,
-                                    model.parameters()),
-                             lr=0.005)
-
-criterion = torch.nn.MSELoss()
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-
-def train(
-          model,
-          set_loader,
-          criterion,
-          optimizer,
-          device):
-
-    losses=[]
-
-    epoch_n = 50
-    model = model.train()
-
-    for epoch in range(1, epoch_n + 1):
-        for batch_id, (image, label) in enumerate(set_loader):
-            label, image = label.to(device), image.to(device)
-            output = model(image)
-            loss = criterion(output, label.double())
-            losses.append(loss.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-
-def compute_accuracy(model, data_set, device):
-    model = model.eval()
-    with torch.no_grad():
-        mse = 0
-        total = 0
-        for batch_id, (image, label) in enumerate(data_set):
-            image = image.to(device)
-            label = label.to(device)
-            outputs = model(image).to(device)
-            se = LA.norm(outputs-label.double())
-            print(se)
-            total += label.shape[0]/4*2
-            mse += se
-    print(mse)
-    return mse
-
-train(model=model, set_loader=set_loader, criterion=criterion, optimizer=optimizer, device=device)
-compute_accuracy(model, set_loader, device)
+if __name__ == "__main__":
+    main()
