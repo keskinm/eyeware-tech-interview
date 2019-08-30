@@ -83,7 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='task2')
     parser.add_argument('--files-input-dir',
                         default='./data/task2',
-                        help='path or dir where text files are stored')
+                        help='path of dir where text files are stored')
 
     parser.add_argument('--plot-output-dir',
                         default='./data',
