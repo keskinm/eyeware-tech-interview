@@ -45,9 +45,9 @@ class TopLeftCornerModelEvaluator:
         if self.train_batch_size >= train_dataset_size:
             self.train_batch_size = train_dataset_size // 3
 
-        train_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=train_dataset_size)
-        val_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=val_dataset_size)
-        test_dataset = SimulatedDataset(work_dir='./data/task3/images', len_data=test_dataset_size)
+        train_dataset = SimulatedDataset(len_data=train_dataset_size)
+        val_dataset = SimulatedDataset(len_data=val_dataset_size)
+        test_dataset = SimulatedDataset(len_data=test_dataset_size)
 
         train_set_loader = DataLoader(train_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
         val_set_loader = DataLoader(val_dataset, batch_size=self.train_batch_size, num_workers=self.num_threads)
