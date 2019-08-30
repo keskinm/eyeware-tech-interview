@@ -70,7 +70,7 @@ class TopLeftCornerModelEvaluator:
         losses = []
         epoch_n = self.train_epoch
         model = model.train()
-        mse = None
+        batch_id = None
 
         for epoch in range(1, epoch_n + 1):
             for batch_id, (image, label) in enumerate(self.train_set_loader):
@@ -84,14 +84,41 @@ class TopLeftCornerModelEvaluator:
 
                 if (batch_id != 0) and (batch_id % self.dump_metrics_frequency == 0):
                     mse = self.compute_mse(model, self.val_set_loader, device=self.device)
-                    self.dump_metrics_and_save_model(mse)
+                    self.dump_metrics_and_save_model(mse=mse,  epoch=epoch, losses=losses, model=model,
+                                                     model_name=self.model_type, optimizer=optimizer, batch_id=batch_id)
+                    self.save_model(epoch=epoch, losses=losses, model=model, optimizer=optimizer, model_name=self.model_type)
 
             print("epoch:", epoch)
-            self.compute_mse(model=model, data_set=self.val_set_loader, device=self.device)
-            self.dump_metrics_and_save_model(mse)
+            mse = self.compute_mse(model, self.val_set_loader, device=self.device)
+            self.dump_metrics_and_save_model(mse=mse, epoch=epoch, losses=losses, model=model,
+                                             model_name=self.model_type, optimizer=optimizer, batch_id=batch_id)
+            self.save_model(epoch=epoch, losses=losses, model=model, optimizer=optimizer, model_name=self.model_type)
 
-    def dump_metrics_and_save_model(self, mse):
-        pass
+    def dump_metrics_and_save_model(self, mse, epoch, losses, model, model_name, optimizer,
+                                    batch_id):
+        self.dump_mse(mse, model_name, epoch, batch_id)
+        self.save_model(epoch=epoch, losses=losses, model=model, optimizer=optimizer, model_name=self.model_type)
+
+    def dump_mse(self, mse, model_name, epoch, batch_idx):
+        metrics_file_path = os.path.join(self.metrics_dir_path,
+                                         '{}.txt'.format(model_name))
+        with open(metrics_file_path, "a") as opened_metrics_file:
+            opened_metrics_file.write(
+                "epoch:{epoch} batch_idx:{batch_idx} mse:{mse}\n"
+                .format(epoch=epoch,
+                        batch_idx=batch_idx,
+                        mse=mse))
+
+    def save_model(self, epoch, losses, model, optimizer, model_name):
+        save_model_file_path = os.path.join(self.save_model_dir_path,
+                                            '{}.pth'.format(model_name))
+        torch.save(
+            {
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'losses': losses
+            }, save_model_file_path)
 
     def init_optimizer(self, model):
         if self.optimizer == 'adam':
@@ -153,7 +180,7 @@ def main():
 
     parser.add_argument('--seed', default=42, help='')
 
-    parser.add_argument('--save-dir', default='./data', help='')
+    parser.add_argument('--save-dir', default='./data/task3', help='')
 
     parser.add_argument('--optimizer',
                         choices=['adam', 'sgd'],
@@ -162,10 +189,9 @@ def main():
 
     parser.add_argument('--dump-metrics-frequency',
                         metavar='Batch_n',
-                        default='200',
+                        default='10',
                         type=int,
                         help='Dump metrics every Batch_n batches')
-
 
     parser.add_argument(
         '--num-threads',
