@@ -28,8 +28,15 @@ def track_method_1(input_file_path, board_dims):
     cv2.destroyAllWindows()
 
 
-def main(input_file_path, output_dir, board_dims):
-    track_method_1(input_file_path, board_dims)
+def track_method_2(input_file_path, board_dims):
+    pass
+
+
+def main(input_file_path, output_dir, board_dims, track_method):
+    if track_method == 'method_1':
+        track_method_1(input_file_path, board_dims)
+    else:
+        track_method_2(input_file_path, board_dims)
 
 
 if __name__ == "__main__":
@@ -47,6 +54,11 @@ if __name__ == "__main__":
                         type=tuple,
                         help='')
 
+    parser.add_argument('--track-method',
+                        choices=['method_1', 'method_2'],
+                        default='method_1',
+                        help='track method in assignment')
+
     args = parser.parse_args()
 
-    main(args.input_file_path, args.output_dir, args.board_dims)
+    main(args.input_file_path, args.output_dir, args.board_dims, args.track_method)
