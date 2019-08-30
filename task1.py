@@ -54,7 +54,9 @@ def sort_files(data, main_vector):
 
 
 def move_files(folder_a_idx, folder_b_idx, folder_c_idx, work_dir):
-    folder_a_dir_path, folder_b_dir_path, folder_c_dir_path = './data/task1/folder_A', './data/task1/folder_B', './data/task1/folder_C'
+    folder_a_dir_path = os.path.join(work_dir, 'folder_A')
+    folder_b_dir_path = os.path.join(work_dir, 'folder_B')
+    folder_c_dir_path = os.path.join(work_dir, 'folder_C')
 
     file_names = os.listdir(work_dir)
 
