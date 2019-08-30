@@ -3,11 +3,11 @@ from models.utils import _initialize_weights, make_layers
 
 
 class SevenConv(nn.Module):
-    def __init__(self, features, num_classes=10, init_weights=True):
+    def __init__(self, features, num_classes=2, init_weights=True):
         super(SevenConv, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.Linear(32 * 7 * 7, 2048),
+            nn.Linear(512 * 10 * 10, 2048),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(2048, 2048),

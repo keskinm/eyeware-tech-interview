@@ -58,10 +58,10 @@ class TopLeftCornerModelEvaluator:
     def run(self):
         seven_conv_model = seven_conv()
         two_conv_model = two_conv()
-        model = two_conv_model
+        model = seven_conv_model
         model = model.double()
         criterion, optimizer = self.init_optimizer(model)
-        self.train(model=two_conv_model, criterion=criterion, optimizer=optimizer, device=self.device)
+        self.train(model=model, criterion=criterion, optimizer=optimizer, device=self.device)
 
     def train(self, model, criterion, optimizer, device):
         losses = []
