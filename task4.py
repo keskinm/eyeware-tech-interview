@@ -32,29 +32,19 @@ def track_method_1(input_file_path, board_dims):
 def track_method_2(input_file_path, board_dims):
     cap = cv2.VideoCapture(input_file_path)
 
-    # params for ShiTomasi corner detection
-    feature_params = dict(maxCorners=9,
-                          qualityLevel=0.3,
-                          minDistance=7,
-                          blockSize=7)
-
-    # Parameters for lucas kanade optical flow
     lk_params = dict(winSize=(15, 15),
                      maxLevel=2,
                      criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
-    # Create some random colors
     color = np.random.randint(0, 255, (100, 3))
 
-    # Take first frame and find corners in it
-    ret, old_frame = cap.read()
-    old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
-    p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
-    ret_corners, p0 = cv2.findChessboardCorners(old_gray, board_dims, None)
-    print(p0.shape)
-
-    # Create a mask image for drawing purposes
-    mask = np.zeros_like(old_frame)
+    ret_corners = False
+    while not ret_corners:
+        ret, old_frame = cap.read()
+        old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+        ret_corners, p0 = cv2.findChessboardCorners(old_gray, board_dims, None)
+        print(ret_corners)
+        mask = np.zeros_like(old_frame)
 
     while True:
         ret, frame = cap.read()
@@ -113,7 +103,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--track-method',
                         choices=['method_1', 'method_2'],
-                        default='method_1',
+                        default='method_2',
                         help='track method in assignment')
 
     args = parser.parse_args()
