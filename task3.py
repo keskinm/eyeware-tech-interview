@@ -7,6 +7,8 @@ from numpy import linalg as LA
 from dataset.simulated_dataset import SimulatedDataset
 import os
 import argparse
+import time
+
 
 class TopLeftCornerModelEvaluator:
     def __init__(self, train_epoch, lr, train_batch_size, test_model,
@@ -37,6 +39,16 @@ class TopLeftCornerModelEvaluator:
         self.optimizer = optimizer
         self.dump_metrics_frequency = dump_metrics_frequency
 
+        if resume_model is not None:
+            self.resume_model_name, self.model_to_resume_path = resume_model
+        else:
+            self.model_to_resume_path = None
+
+        if test_model is not None:
+            self.test_model_name, self.model_to_test_path = test_model
+        else:
+            self.model_to_test_path = None
+
     def prepare_data(self):
         train_dataset_size = round(0.7 * self.simulated_dataset_size)
         val_dataset_size = round(0.15 * self.simulated_dataset_size)
@@ -56,6 +68,16 @@ class TopLeftCornerModelEvaluator:
         return train_set_loader, val_set_loader, test_set_loader
 
     def run(self):
+        if self.model_to_test_path is not None:
+            self.test_model()
+
+        elif self.model_to_resume_path is not None:
+            pass
+
+        else:
+            self.train_val()
+
+    def train_val(self):
         seven_conv_model = seven_conv()
         two_conv_model = two_conv()
         if self.model_type == 'seven_conv':
@@ -65,6 +87,19 @@ class TopLeftCornerModelEvaluator:
         model = model.double()
         criterion, optimizer = self.init_optimizer(model)
         self.train(model=model, criterion=criterion, optimizer=optimizer, device=self.device)
+
+    def test_model(self):
+        if self.test_model_name == 'seven_conv':
+            model = seven_conv()
+        else:
+            model = two_conv()
+        model = self.load_model(model=model,
+                                optimizer=None,
+                                model_params_path=self.model_to_test_path)
+        inference_time_start = time.time()
+        self.compute_mse(model=model, data_set=self.test_set_loader, device=self.device)
+        inference_time = time.time() - inference_time_start
+        print(inference_time)
 
     def train(self, model, criterion, optimizer, device):
         losses = []
@@ -136,7 +171,7 @@ class TopLeftCornerModelEvaluator:
         return criterion, optimizer
 
     def compute_mse(self, model, data_set, device):
-        model = model.eval()
+        model = model.eval().double()
         with torch.no_grad():
             mse = 0
             total = 0
@@ -148,8 +183,21 @@ class TopLeftCornerModelEvaluator:
                 # print(se)
                 total += label.shape[0]/4*2
                 mse += se
-        print(mse)
+        print("mse:", mse)
         return mse
+
+    def load_model(self, model, optimizer, model_params_path):
+        checkpoint = torch.load(model_params_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+
+        if self.model_to_resume_path is not None:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            epoch = checkpoint['epoch']
+            losses = checkpoint['losses']
+            return model.to(self.device), optimizer, losses, epoch
+
+        else:
+            return model.to(self.device)
 
 
 def main():
