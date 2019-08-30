@@ -11,16 +11,16 @@ def track_method_1(input_file_path, board_dims):
         if not ret:
             break
 
-        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        corners_ret, corners = cv2.findChessboardCorners(frame, board_dims)
+        corners_ret, corners = cv2.findChessboardCorners(gray, board_dims, None)
 
         if corners_ret:
             for corner in corners:
                 x, y = corner.ravel()
-                cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)
+                cv2.circle(gray, (x, y), 3, (0, 0, 255), -1)
 
-        cv2.imshow('frame', frame)
+        cv2.imshow('frame', gray)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -33,7 +33,7 @@ def track_method_2(input_file_path, board_dims):
     cap = cv2.VideoCapture(input_file_path)
 
     # params for ShiTomasi corner detection
-    feature_params = dict(maxCorners=100,
+    feature_params = dict(maxCorners=9,
                           qualityLevel=0.3,
                           minDistance=7,
                           blockSize=7)
@@ -50,7 +50,7 @@ def track_method_2(input_file_path, board_dims):
     ret, old_frame = cap.read()
     old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
     p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
-    ret_corners, p0 = cv2.findChessboardCorners(old_gray, board_dims)
+    ret_corners, p0 = cv2.findChessboardCorners(old_gray, board_dims, None)
     print(p0.shape)
 
     # Create a mask image for drawing purposes
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                         help='')
 
     parser.add_argument('--board-dims',
-                        default=[3, 3],
+                        default=[6, 10],
                         nargs="+",
                         type=int,
                         help='')
