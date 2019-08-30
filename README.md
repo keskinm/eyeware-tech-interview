@@ -100,6 +100,7 @@ Test :
 
 ## Task4:
 
+    parser = argparse.ArgumentParser(prog='task2')
     parser.add_argument('--input-file-path',
                         default='./data/task4/chessboard_pattern_tech_interview.mp4',
                         help='path of input video')
@@ -109,13 +110,14 @@ Test :
                         help='')
 
     parser.add_argument('--board-dims',
-                        default=(3, 3),
-                        type=tuple,
+                        default=[6, 10],
+                        nargs="+",
+                        type=int,
                         help='')
 
     parser.add_argument('--track-method',
                         choices=['method_1', 'method_2'],
-                        default='method_1',
+                        default='method_2',
                         help='track method in assignment')
                         
-ex: `python -m task4 --input-file-path ./data/task4/chessboard_pattern_tech_interview.mp4 --track-method method_1`
+ex: `python -m task4 --input-file-path ./data/task4/chessboard_pattern_tech_interview.mp4 --track-method method_2`
