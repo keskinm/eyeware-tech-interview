@@ -7,6 +7,8 @@
                         
 Will generate data in work-dir and re-organize it accordingly to the assignment willing
 
+I chose mean vector (mean for each dimension over all samples) as "main vector"
+
 ex: `python -m task1 --work-dir ./data/task1`
                         
 
