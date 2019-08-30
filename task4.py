@@ -2,7 +2,7 @@ import cv2
 import argparse
 
 
-def track_method_1(input_file_path):
+def track_method_1(input_file_path, board_dims):
     cap = cv2.VideoCapture(input_file_path)
 
     while cap.isOpened():
@@ -12,7 +12,7 @@ def track_method_1(input_file_path):
 
         # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        corners_ret, corners = cv2.findChessboardCorners(frame, (3, 3))
+        corners_ret, corners = cv2.findChessboardCorners(frame, board_dims)
 
         if corners_ret:
             for corner in corners:
@@ -28,20 +28,25 @@ def track_method_1(input_file_path):
     cv2.destroyAllWindows()
 
 
-def main(input_file_path, output_dir):
-    track_method_1(input_file_path)
+def main(input_file_path, output_dir, board_dims):
+    track_method_1(input_file_path, board_dims)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='task2')
     parser.add_argument('--input-file-path',
-                        default='./data/task2',
+                        default='./data/task4/chessboard_pattern_tech_interview.mp4',
                         help='path of input video')
 
     parser.add_argument('--output-dir',
                         default='./data',
                         help='')
 
+    parser.add_argument('--board-dims',
+                        default=(3, 3),
+                        type=tuple,
+                        help='')
+
     args = parser.parse_args()
 
-    main(args.input_file_path, args.output_dir)
+    main(args.input_file_path, args.output_dir, args.board_dims)
