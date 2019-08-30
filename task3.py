@@ -58,7 +58,10 @@ class TopLeftCornerModelEvaluator:
     def run(self):
         seven_conv_model = seven_conv()
         two_conv_model = two_conv()
-        model = seven_conv_model
+        if self.model_type == 'seven_conv':
+            model = seven_conv_model
+        else:
+            model = two_conv_model
         model = model.double()
         criterion, optimizer = self.init_optimizer(model)
         self.train(model=model, criterion=criterion, optimizer=optimizer, device=self.device)
